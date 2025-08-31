@@ -1,0 +1,19 @@
+[package]
+name = "symploke"
+version = "0.1.0"
+edition = "2021"
+authors = ["Salvatore Bertino sabert148@gmail.com"]
+
+[dependencies]
+
+[dev-dependencies]
+clippy = { version = "0.1.75", features = ["lint_groups"] }
+rustfmt = "0.10.0"
+
+# mockall
+# pretty_assertions
+# cargo-test-macro
+# proptest
+
+[profile.release]
+opt-level = 3
