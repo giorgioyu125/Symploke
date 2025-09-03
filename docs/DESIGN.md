@@ -13,7 +13,48 @@ the Symploke Interpreter, because we are implementeing a complex memory model th
 mainly four different components of the VM: Garbage Collector, Abstract Syntax Tree, Evaluator 
 and Symbolic Table (The semantic core of our language).
 
-# Garbage Collector
+
+## Phases of Symploke Interpreter Execution
+
+### The Lexer, the first part:
+
+The lexer is the set of procedures or functions that is made to transform the source code text into a list of ordered idioms 
+defined by the language, and later this will be used by the syntax analyzer, semantic checker and the symbol table to execute,
+check and collect informations.
+
+In Symploke the types are optional because as the name suggest we dont look too much at the "Intrinsic Property" but at the 
+relation or the form of this relations. But in "some" sense every atom is simply a collection of letters, this does not means 
+that letters are the fundematal type, just that every atom is made of them.
+
+The Lexer transforms every token by recognizing its lenght by reading it and matching it in its internal strucuture.
+Like in this example:
+
+(+ 1 2)
+
+Lexer output:
+
+LEFT_PAREN ( 1 1 1
+PLUS_OP + 1 1 1
+INT 1 1 1
+...
+(kind lexeme span depth sexpr_id) 
+
+
+The first 4 parameters of a token are just immediate and can be calculated without any problem, but. The 
+last one needs some more attention. Because the number of sexpr_id is the number of open parenthesis and assign to each 
+the correct is id is not immediate. Because the same "depth" of innesting can corrispond to different s-exp we need 
+a fancier algorithm to express correctly this last paramater.
+
+The algorithm is indeed *very simple* and it looks like this little rules:
+
+Create a stack a empty stack. and manipulate this stack for every token seen left to right.
+
+Push - a new id when you encounter a open praenthesis '('
+Pop - when you find a closed parenthesis pop from the stack the upmost element.
+Peek&Assign - when you find an atom peek the stack upmost id and assign it to that token.
+
+
+### Garbage Collector
 
 The Garbage collector is intrisically generational so its made of mainly three parts and follow
 this hypothesis:"Younger object dies more often". This very simple assumption of atomicity is 
@@ -50,7 +91,7 @@ So how all this parts connect to one single elegant algorithms? with these steps
    that is the one empty, of the program.
 4. We destroy the old gen section and we restart the process from (1) with the new section as the current section
 
-# AST and Evaluator
+### AST and Evaluator
 
 So the Evaluator is a fundamental part of the advancment algorithm of the GGC in the VM, and rapresents the solving
 process of the Abstract Syntax Tree.
@@ -102,7 +143,7 @@ of the 2 and 3 objects. After this the evaluator is called again and finally res
 This result is the value of the original S-exp (+ 1 (+ 2 3)). So... we have completed the algorithm successfully!
 But still we need a map to guide us to how to use correctly the objects: The Symbolic Table.
 
-# Symbolic Table
+### Symbolic Table
 
 We are not yet discussing what is a *Symbol* in Lisp and Symploke formally but we can says that a symbol is:
 "The reference to an object", thats right, very simple and straightforawrd. So the symbol have a pair in memory that is the 
@@ -119,13 +160,13 @@ that lists all its property in order. Because every object needs to fill the sam
 with size known at compile time but a number of them (number of symbol)only know at runtime or when 
 evaluating the programs expressions. This is a example table for our program:
 
-| Name | TypeTag | Flags (bitset) | Arity (packed) | ValuePtr | EntryPtr | EnvID  | StackSlot | GCInfo (packed) |       SizeBytes      |
-|:----:|:-------:|:--------------:|:--------------:|:--------:|:--------:|:------:|:---------:|:---------------:|:--------------------:|
-|  x   |   var   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     0     | (gen,age,color) |    ???               |
-|  5   |   int   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     1     | (gen,age,color) |     4                |
-|"Save"|   str   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     2     | (gen,age,color) |     4                |
-|(! 3) |  s-exp  | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   2    |     3     | (gen,age,color) |    ???               |
-| car  |  prim-f | (1 0 ...... 0) |       1        |   &car   | &native  |   2    |     4     | (gen,age,color) | (car functions size) |
+| Name | TypeTag | Flags (bitset) | Arity (packed) | ValuePtr | EntryPtr | EnvID  | StackSlot |      GCInfo (packed)     |      SizeBytes       |
+|:----:|:-------:|:--------------:|:--------------:|:--------:|:--------:|:------:|:---------:|:------------------------:|:--------------------:|
+|  x   |   var   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     0     | (gen,&age-brigade,color) |    ???               |
+|  5   |   int   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     1     | (gen,&age-brigade,color) |     4                |
+|"Save"|   str   | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   1    |     2     | (gen,&age-brigade,color) |     4                |
+|(! 3) |  s-exp  | (1 0 ...... 0) |      NIL       |   &heap  |   NIL    |   2    |     3     | (gen,&age-brigade,color) |    ???               |
+| car  |  prim-f | (1 0 ...... 0) |       1        |   &car   | &native  |   2    |     4     | (gen,&age-brigade,color) | (car functions size) |
 
 
 TypeTag: what this is (int, float, cons, string, symbol, function, macro, special-form, vector, nil, bool…).
@@ -149,7 +190,16 @@ EnvPtr: environment/closure pointer for captured variables; null for data and pr
 StackSlot: index/ID of the root in your pointer pile (Deque). -1 if not 
 rooted here (e.g., temporary or global managed elsewhere).
 
-GCInfo (packed): small struct or bitfield. Suggested: gen (0=new, 1=old), age (survivor count), 
-color/mark if you ever need it, and a pinned bit mirror. Keeps promotion logic simple.
+GCInfo (packed): (gen,&age-brigade,color), each one of the is rapresent the generation and which "age range" each
+                 object is part of. The color is only put to open up the table to more expressivity and optimization.
+                 Probabily will be another table with only three colum that is devided not in symbols but in age-brigade 
+                 buckets so that the GC can easily locate younger and probabily less used object.
+                 Or maybe the Symbol table address can be devided in this sort of "Age Range Buckets".
+
 
 SizeBytes: size of the heap payload for copy GC. 0 for immediates.
+
+Read all the tokens separeted left to right and place on the stack the id of the first when you see the first parenthesis,
+after that keep going forward until you encounter another parenthesis, from now and then if it is closed pop an element from the stack 
+if its open push it on the stack with a new fresh id. Meanwhile every atom you encounter peek from the stack and give to that 
+atom that value.

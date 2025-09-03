@@ -6,8 +6,16 @@ authors = ["Salvatore Bertino sabert148@gmail.com"]
 
 [dependencies]
 
+[lib]
+name = "symploke"
+path = "src/lib.rs"
+
+[[bin]]
+name = "symploke"
+path = "src/main.rs"
+
 [dev-dependencies]
-clippy = { version = "0.1.75", features = ["lint_groups"] }
+clippy = "0.0.3"
 rustfmt = "0.10.0"
 
 # mockall
