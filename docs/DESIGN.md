@@ -29,7 +29,7 @@ that letters are the fundematal type, just that every atom is made of them.
 The Lexer transforms every token by recognizing its lenght by reading it and matching it in its internal strucuture.
 Like in this example:
 
-(+ 1 2)
+( + 1 2 )
 
 Lexer output:
 
@@ -37,6 +37,8 @@ LEFT_PAREN ( 1 1 1
 PLUS_OP + 1 1 1
 INT 1 1 1
 ...
+(LeftParen, "(", 1, 0, 1), (PlusOp, "+", 1, 1, 1), (Int, "1", 1, 1, 1), (Int, "2", 1, 1, 1), (RightParen, ")", 1, 0, 1)
+or
 (kind lexeme span depth sexpr_id) 
 
 
@@ -53,6 +55,17 @@ Push - a new id when you encounter a open praenthesis '('
 Pop - when you find a closed parenthesis pop from the stack the upmost element.
 Peek&Assign - when you find an atom peek the stack upmost id and assign it to that token.
 
+
+### The AST constructor, the second part:
+
+This part is concerned about creating the AST accordingly to the syntax rules of the language. Note that the AST 
+construction itself is the syntax checking, so if the AST cannot be constructed properly the syntax of the program
+is wrong.
+
+After this, lets showcase the AST constructor algorithm: 
+
+
+// REVIEWED PART END
 
 ### Garbage Collector
 
