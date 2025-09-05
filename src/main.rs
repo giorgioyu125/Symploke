@@ -1,4 +1,5 @@
-use symploke::lexer;
+use symploke::lexer::lexer;
+
 
 fn main() {
     let s: Vec<&str> = vec![

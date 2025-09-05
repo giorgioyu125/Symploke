@@ -64,6 +64,42 @@ is wrong.
 
 After this, lets showcase the AST constructor algorithm: 
 
+    Take the following exp as an example:
+
+    (+ (+ 1 2) (+ 7 8))
+
+    Steps: 
+
+    1. Make the Exp above a linked list of tokens 
+    2. We search for every '(' with a different sexpr_id and we copy only everything in that list that have that id, and
+        if we encounter something that have not that id we skip over it, expect for (, until we found one only including 
+        the starting ) with that specific id, the closing ) of that id.
+    3. Now we have a collection of linked list with a sort of reference to the others via the id, so we push every linked list 
+        in an hashtable choosing a key the id and as value the list itself.
+    4. We resolve the reference by id placing the corrisponding expression where its called going by lower to higher id but copying 
+        only the reference to the rest of the "new" list included in the one with the lower id, but keeping the reference to the rest 
+        of the old list. 
+    5. While we resolve the reference we make sure that every linked list have an ending in of the two direction. Forward or Outside the 
+        list that contain that new list. Essentialy we balance the ().
+    6. We keep resolving all the reference and we are done, because the resulting nest of Linked List is now a tree, a tree 
+        rapresenting the nesting nature of our S-Expression: the AST.
+
+    Expected output: 
+    (+ ( ( )
+       | |
+       + +
+       | |
+       1 7
+       | |
+       2 8
+       | |
+       ) )
+
+    Because every Linked List have its own set of () the expression is a "well-formed formula" of symploke.
+
+
+
+
 
 // REVIEWED PART END
 
