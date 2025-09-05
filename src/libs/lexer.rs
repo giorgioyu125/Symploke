@@ -18,7 +18,7 @@ struct Re {
     word: Regex,
 }
 static RE: Lazy<Re> = Lazy::new(|| Re {
-    word: Regex::new(r"^[a-zA-Z0-9]+$").unwrap(),
+    word: Regex::new(r"[^\s()]+").unwrap(),
 });
 
 pub fn classify_token(token_str: &str) -> TokenKinds {
